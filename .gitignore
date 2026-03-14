@@ -1,4 +1,10 @@
 02-expirement-tracking/
+mlruns/
+mlflow.db
+*.bin
+*.b
+.ipynb_checkpoints/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
