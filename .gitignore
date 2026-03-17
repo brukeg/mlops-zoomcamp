@@ -4,7 +4,8 @@ mlflow.db
 *.bin
 *.b
 .ipynb_checkpoints/
-
+.DS_Store
+02-experiment-tracking/notes.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
