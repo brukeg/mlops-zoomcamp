@@ -12,7 +12,9 @@ from sklearn.metrics import root_mean_squared_error
 
 import mlflow
 
-mlflow.set_tracking_uri("http://localhost:5000")
+MLFLOW_EC2_HOST="ec2-34-221-214-210.us-west-2.compute.amazonaws.com"
+
+mlflow.set_tracking_uri(f"http://{MLFLOW_EC2_HOST}:5000")
 mlflow.set_experiment("nyc-taxi-experiment")
 
 models_folder = Path('models')
