@@ -1,0 +1,15 @@
+blocks:
+- uuid: ingest_data
+  type: data_loader
+  upstream_blocks: []
+  downstream_blocks: [prepare_features]
+- uuid: prepare_features
+  type: transformer
+  upstream_blocks: [ingest_data]
+  downstream_blocks: [train_model]
+- uuid: train_model
+  type: transformer
+  upstream_blocks: [prepare_features]
+  downstream_blocks: []
+name: duration_prediction
+type: python

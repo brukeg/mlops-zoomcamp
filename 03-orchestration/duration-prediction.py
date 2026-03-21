@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+import os
 import pickle
 from pathlib import Path
+from datetime import datetime
 
 import pandas as pd
 import xgboost as xgb
@@ -12,8 +14,7 @@ from sklearn.metrics import root_mean_squared_error
 
 import mlflow
 
-MLFLOW_EC2_HOST="ec2-34-221-214-210.us-west-2.compute.amazonaws.com"
-
+MLFLOW_EC2_HOST = os.environ.get("MLFLOW_EC2_HOST", "localhost")
 mlflow.set_tracking_uri(f"http://{MLFLOW_EC2_HOST}:5000")
 mlflow.set_experiment("nyc-taxi-experiment")
 
@@ -91,12 +92,34 @@ def train_model(X_train, y_train, X_val, y_val, dv):
         return run.info.run_id
 
 
-def run(year, month):
-    df_train = read_dataframe(year=year, month=month)
+def get_training_months():
+    now = datetime.now()
+    # Go back 2 months for train, 1 month for val
+    train_month = now.month - 2
+    train_year = now.year
+    if train_month <= 0:
+        train_month += 12
+        train_year -= 1
 
-    next_year = year if month < 12 else year + 1
-    next_month = month + 1 if month < 12 else 1
-    df_val = read_dataframe(year=next_year, month=next_month)
+    val_month = now.month - 1
+    val_year = now.year
+    if val_month <= 0:
+        val_month += 12
+        val_year -= 1
+
+    return train_year, train_month, val_year, val_month
+
+
+def run(year=None, month=None):
+    if year is None or month is None:
+        train_year, train_month, val_year, val_month = get_training_months()
+    else:
+        train_year, train_month = year, month
+        val_year = year if month < 12 else year + 1
+        val_month = month + 1 if month < 12 else 1
+
+    df_train = read_dataframe(year=train_year, month=train_month)
+    df_val = read_dataframe(year=val_year, month=val_month)
 
     X_train, dv = create_X(df_train)
     X_val, _ = create_X(df_val, dv)
@@ -114,8 +137,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description='Train a model to predict taxi trip duration.')
-    parser.add_argument('--year', type=int, required=True, help='Year of the data to train on')
-    parser.add_argument('--month', type=int, required=True, help='Month of the data to train on')
+    parser.add_argument('--year', type=int, required=False, help='Year of the data to train on')
+    parser.add_argument('--month', type=int, required=False, help='Month of the data to train on')
     args = parser.parse_args()
 
     run_id = run(year=args.year, month=args.month)
