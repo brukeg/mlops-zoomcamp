@@ -15,6 +15,15 @@ orchestrator, running on AWS EC2.
 - **SSH:** `ssh -i ~/.ssh/<your-key>.pem ec2-user@<public-dns>`
 - Note: Public DNS changes on every stop/start — look it up in EC2 console each session
 
+### EBS Volume
+- **Volume ID:** vol-0de90334ed91b6095
+- **Size:** 20GB (expanded from 8GB — original was too small for Docker image builds)
+- If you ever need to expand again: modify volume in AWS console, then run:
+  ```bash
+  sudo growpart /dev/nvme0n1 1
+  sudo xfs_growfs /
+  ```
+
 ### RDS (Postgres)
 - **Identifier:** mlflow-backend-db
 - **Host:** mlflow-backend-db.c1aw8egmm7x1.us-west-2.rds.amazonaws.com
@@ -40,6 +49,12 @@ orchestrator, running on AWS EC2.
 - The old `~/.aws/credentials` file (mlflow-user) was renamed to
   `~/.aws/credentials.bak` — instance now authenticates via IAM role only
 
+### Security Group
+- Inbound rules open for ports **5000** (MLflow) and **6789** (Mage) from `0.0.0.0/0`
+- This is intentional for a dev/course environment — not acceptable for production
+- If the rule is scoped to a specific IP and you get "This site can't be reached",
+  update the inbound rule to your current IP or re-open to `0.0.0.0/0`
+
 ## Services Running on EC2
 
 ### MLflow
@@ -62,8 +77,24 @@ orchestrator, running on AWS EC2.
 ### Mage
 - **Port:** 6789
 - **Managed by:** Docker with `--restart unless-stopped`
+- **Image:** `mageai-custom` (custom image built on EC2 with mlflow and xgboost baked in)
+  - Dockerfile is at `/home/ec2-user/Dockerfile`
+  - Do NOT use `mageai/mageai:latest` directly — missing required packages
 - **Project name:** mlops-pipeline
-- **Default credentials:** admin@admin.com / (change this!)
+- **Project location on EC2:** `/home/ec2-user/mlops-pipeline/` (owned by root, managed by Docker)
+- **MLFLOW_EC2_HOST:** passed as env var at container startup — must be updated each session
+  when EC2 gets a new public DNS
+- **Full docker run command** (run this when recreating the container):
+```bash
+docker run -d \
+  --name mage \
+  --restart unless-stopped \
+  -p 6789:6789 \
+  -v /home/ec2-user:/home/src \
+  -e MLFLOW_EC2_HOST=<current-public-dns> \
+  mageai-custom \
+  mage start mlops-pipeline
+```
 - **Commands:**
 ```bash
   docker ps                    # check if running
@@ -73,18 +104,63 @@ orchestrator, running on AWS EC2.
   docker restart mage          # restart
 ```
 
+## Mage Pipeline
+
+### Structure
+The pipeline lives in two places:
+1. **Git repo (source of truth):** `03-orchestration/mlops-pipeline/`
+   - `blocks/ingest_data.py` — data loader block
+   - `blocks/prepare_features.py` — feature engineering block
+   - `blocks/train_model.py` — XGBoost training + MLflow logging block
+   - `pipelines/duration_prediction/metadata.yaml` — pipeline definition
+2. **Live Mage project on EC2:** `/home/ec2-user/mlops-pipeline/`
+   - Blocks are copied into `data_loaders/` and `transformers/` subdirectories
+   - Pipeline definition is at `pipelines/duration_prediction/metadata.yaml`
+
+### Deploying Changes to EC2
+When block files are updated locally, deploy to EC2 manually:
+```bash
+# On EC2 — pull latest from git
+cd /home/ec2-user/mlops-zoomcamp && git pull
+
+# Copy blocks to live Mage project
+sudo cp 03-orchestration/mlops-pipeline/blocks/ingest_data.py /home/ec2-user/mlops-pipeline/data_loaders/
+sudo cp 03-orchestration/mlops-pipeline/blocks/prepare_features.py /home/ec2-user/mlops-pipeline/transformers/
+sudo cp 03-orchestration/mlops-pipeline/blocks/train_model.py /home/ec2-user/mlops-pipeline/transformers/
+```
+
+### Data Availability Lag
+- NYC taxi data on CloudFront lags approximately 6+ months behind the current date
+- `get_training_months()` in `duration-prediction.py` will return 403 errors until late 2026
+- For testing, hardcode known-good dates in `ingest_data.py`:
+  ```python
+  df_train = read_dataframe(2021, 1)
+  df_val = read_dataframe(2021, 2)
+  ```
+- Revert to `get_training_months()` once data catches up
+
+### Mage Inter-Block Data Passing
+- Mage passes block return values as a flat list to downstream blocks
+- Numpy arrays are serialized as dicts — convert to `.tolist()` before returning,
+  and back to `np.array()` after unpacking in the next block
+
 ## Key Files
 - **Pipeline script:** `mlops-zoomcamp/03-orchestration/duration-prediction.py`
 - **MLflow start script:** `/usr/local/bin/start-mlflow.sh` (on EC2)
 - **MLflow systemd unit:** `/etc/systemd/system/mlflow.service` (on EC2)
+- **Mage Dockerfile:** `/home/ec2-user/Dockerfile` (on EC2)
 
 ## Known Issues / Deferred Work
 1. **RDS password visible in ps aux** — pass via environment variable or .pgpass
    instead of CLI argument in start-mlflow.sh
-2. **train/val date window bug** — current script uses month+1 for validation,
-   but course spec says train=2 months ago, val=1 month ago. Fix before
-   wiring into Mage scheduler.
-3. **Mage default password** — change from default admin credentials
+2. **Mage default password** — change from default admin credentials
+3. **MLFLOW_EC2_HOST stale after EC2 restart** — must manually recreate the Mage
+   container with updated public DNS each session (see docker run command above)
+4. **Block files not version-controlled on EC2** — files in `/home/ec2-user/mlops-pipeline/`
+   are owned by root and copied manually from the git repo; consider a proper
+   sync script or CI/CD for the capstone
+5. **OOM during training on t3.small** — subsample df_train and df_val to 10,000 rows
+   in ingest_data.py to avoid hitting Mage's 95% memory limit
 
 ## Startup Checklist (Each Session)
 1. Start RDS in AWS console, wait for "Available"
@@ -94,7 +170,9 @@ orchestrator, running on AWS EC2.
    sudo systemctl status mlflow
    docker ps
 ```
-4. If first session after password rotation, update Secrets Manager
+4. If Mage container is stopped (not just restarted), recreate it with updated
+   `MLFLOW_EC2_HOST` using the docker run command above
+5. If first session after password rotation, update Secrets Manager
 
 ## Shutdown Checklist (Each Session)
 1. `exit` SSH session
