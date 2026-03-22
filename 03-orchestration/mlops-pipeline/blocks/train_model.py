@@ -33,9 +33,9 @@ def train_model(data, *args, **kwargs):
         booster = xgb.train(
             params=best_params,
             dtrain=train,
-            num_boost_round=30,
+            num_boost_round=5,
             evals=[(valid, 'validation')],
-            early_stopping_rounds=50
+            early_stopping_rounds=3
         )
 
         y_pred = booster.predict(valid)

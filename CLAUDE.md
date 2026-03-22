@@ -9,7 +9,7 @@ orchestrator, running on AWS EC2.
 
 ### EC2 Instance
 - **Instance ID:** i-048cc37228103a941
-- **Type:** t3.small (2 vCPU, 2GB RAM)
+- **Type:** m7i-flex.large (2 vCPU, 8GB RAM) — upgraded from t3.small due to OOM issues running MLflow + Mage + XGBoost training concurrently
 - **Region:** us-west-2
 - **OS:** Amazon Linux
 - **SSH:** `ssh -i ~/.ssh/<your-key>.pem ec2-user@<public-dns>`
@@ -159,8 +159,8 @@ sudo cp 03-orchestration/mlops-pipeline/blocks/train_model.py /home/ec2-user/mlo
 4. **Block files not version-controlled on EC2** — files in `/home/ec2-user/mlops-pipeline/`
    are owned by root and copied manually from the git repo; consider a proper
    sync script or CI/CD for the capstone
-5. **OOM during training on t3.small** — subsample df_train and df_val to 10,000 rows
-   in ingest_data.py to avoid hitting Mage's 95% memory limit
+5. **Subsampling in place** — df_train and df_val are sampled to 10,000 rows in ingest_data.py;
+   revert if training quality becomes important (e.g. capstone)
 
 ## Startup Checklist (Each Session)
 1. Start RDS in AWS console, wait for "Available"

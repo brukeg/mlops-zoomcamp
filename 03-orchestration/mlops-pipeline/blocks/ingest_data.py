@@ -20,22 +20,6 @@ def read_dataframe(year, month):
 
 @data_loader
 def load_data(*args, **kwargs):
-    from datetime import datetime
-
-    now = datetime.now()
-
-    train_month = now.month - 2
-    train_year = now.year
-    if train_month <= 0:
-        train_month += 12
-        train_year -= 1
-
-    val_month = now.month - 1
-    val_year = now.year
-    if val_month <= 0:
-        val_month += 12
-        val_year -= 1
-
     df_train = read_dataframe(2021, 1)
     df_val = read_dataframe(2021, 2)
 
