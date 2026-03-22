@@ -36,7 +36,9 @@ def load_data(*args, **kwargs):
         val_month += 12
         val_year -= 1
 
-    df_train = read_dataframe(train_year, train_month)
-    df_val = read_dataframe(val_year, val_month)
+    df_train = read_dataframe(2021, 1)
+    df_val = read_dataframe(2021, 2)
 
+    df_train = df_train.sample(n=10000, random_state=42)
+    df_val = df_val.sample(n=10000, random_state=42)   
     return df_train, df_val

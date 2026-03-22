@@ -159,6 +159,8 @@ sudo cp 03-orchestration/mlops-pipeline/blocks/train_model.py /home/ec2-user/mlo
 4. **Block files not version-controlled on EC2** — files in `/home/ec2-user/mlops-pipeline/`
    are owned by root and copied manually from the git repo; consider a proper
    sync script or CI/CD for the capstone
+5. **OOM during training on t3.small** — subsample df_train and df_val to 10,000 rows
+   in ingest_data.py to avoid hitting Mage's 95% memory limit
 
 ## Startup Checklist (Each Session)
 1. Start RDS in AWS console, wait for "Available"
