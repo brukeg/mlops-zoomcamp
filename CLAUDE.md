@@ -1,9 +1,9 @@
-# MLOps Zoomcamp — Module 3: Orchestration with Mage
+# MLOps Zoomcamp — Module 4: Model Deployment
 
 ## Project Overview
-We are working through the MLOps Zoomcamp course, Module 3. The goal is to wrap
-`duration-prediction.py` into a production-style ML pipeline using Mage as the
-orchestrator, running on AWS EC2.
+We are working through the MLOps Zoomcamp course. Module 3 (Mage orchestration) is complete.
+Module 4 covers model deployment patterns: web service, batch, and streaming.
+The web-service lesson deploys a Flask app in Docker serving ride duration predictions.
 
 ## AWS Infrastructure
 
@@ -161,6 +161,43 @@ sudo cp 03-orchestration/mlops-pipeline/blocks/train_model.py /home/ec2-user/mlo
    sync script or CI/CD for the capstone
 5. **Subsampling in place** — df_train and df_val are sampled to 10,000 rows in ingest_data.py;
    revert if training quality becomes important (e.g. capstone)
+
+## Module 4: Web Service Deployment
+
+### Overview
+- Flask app (`predict.py`) serves ride duration predictions on port 9696
+- Model loaded from `lin_reg.bin` (pickled DictVectorizer + LinearRegression)
+- Containerized with Docker, deployed on EC2
+- Port 9696 open in EC2 security group (0.0.0.0/0)
+
+### Files
+- `04-deployment/web-service/predict.py` — Flask app
+- `04-deployment/web-service/test.py` — test client (points at localhost by default)
+- `04-deployment/web-service/Dockerfile` — builds the service image
+- `04-deployment/web-service/Pipfile` — pinned deps: scikit-learn==1.0.2, numpy==1.21.6, flask, gunicorn
+- `04-deployment/web-service/lin_reg.bin` — pre-trained model (committed to git)
+
+### Running on EC2
+```bash
+# SSH into EC2, then:
+cd /home/ec2-user/mlops-zoomcamp
+git pull
+cd 04-deployment/web-service
+docker build -t ride-duration-prediction-service:v1 .
+docker run -d --name ride-duration -p 9696:9696 ride-duration-prediction-service:v1
+```
+
+### Testing from Mac
+```bash
+# Update test.py url to EC2 public DNS, then:
+pipenv run python test.py
+# Expected: {'duration': 26.43883355119793}
+```
+
+### Notes
+- numpy must be pinned to 1.21.6 — newer versions cause binary incompatibility with lin_reg.bin
+- test.py defaults to localhost; update URL manually when testing against EC2
+- Next lesson: web-service-mlflow (loads model from MLflow registry instead of pickle)
 
 ## Startup Checklist (Each Session)
 1. Start RDS in AWS console, wait for "Available"
