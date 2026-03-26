@@ -3,6 +3,7 @@ mlruns/
 mlflow.db
 *.bin
 *.b
+!04-deployment/web-service/lin_reg.bin
 .ipynb_checkpoints/
 .DS_Store
 02-experiment-tracking/notes.md
