@@ -200,18 +200,34 @@ pipenv run python test.py
 - Next lesson: web-service-mlflow (loads model from MLflow registry instead of pickle)
 
 ## Startup Checklist (Each Session)
-1. Start RDS in AWS console, wait for "Available"
+1. RDS is left running — no action needed (stopped only to save cost on long breaks)
 2. Start EC2 in AWS console, grab new Public DNS
 3. SSH in and verify services:
 ```bash
-   sudo systemctl status mlflow
-   docker ps
+   sudo systemctl status mlflow   # should be active
+   docker ps                      # should show mage + ride-duration containers
 ```
 4. If Mage container is stopped (not just restarted), recreate it with updated
    `MLFLOW_EC2_HOST` using the docker run command above
-5. If first session after password rotation, update Secrets Manager
+5. If ride-duration container is not running, restart it:
+```bash
+   docker start ride-duration
+   # or rebuild if image is missing:
+   cd /home/ec2-user/mlops-zoomcamp/04-deployment/web-service
+   docker build -t ride-duration-prediction-service:v1 .
+   docker run -d --name ride-duration -p 9696:9696 ride-duration-prediction-service:v1
+```
+6. To test the web service from Mac, update test.py URL to current EC2 public DNS:
+```bash
+   # in 04-deployment/web-service/test.py, change:
+   url = 'http://<current-ec2-public-dns>:9696/predict'
+   # then run:
+   pipenv run python test.py
+   # expected: {'duration': 26.43883355119793}
+```
+7. If first session after password rotation, update Secrets Manager
 
 ## Shutdown Checklist (Each Session)
 1. `exit` SSH session
 2. Stop EC2 instance in AWS console
-3. Stop RDS instance in AWS console
+3. Leave RDS running (or stop only if taking a break of several days)
