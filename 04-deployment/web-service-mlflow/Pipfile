@@ -4,10 +4,10 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-scikit-learn = "==1.0.2"
+scikit-learn = "==1.6.1"
 flask = "*"
 gunicorn = "*"
-numpy = "==1.21.6"
+numpy = "==2.0.2"
 mlflow = "==3.1.4"
 boto3 = "*"
 pandas = "*"

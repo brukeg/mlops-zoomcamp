@@ -5,9 +5,10 @@ from flask import Flask, request, jsonify
 
 
 RUN_ID = os.getenv('RUN_ID')
+MLFLOW_TRACKING_URI = os.getenv('MLFLOW_TRACKING_URI')
+mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
-logged_model = f's3://mlflow-artifacts-remote-bruke-720881264075-us-west-2-an/1/{RUN_ID}/artifacts/model'
-# logged_model = f'runs:/{RUN_ID}/model'
+logged_model = f'runs:/{RUN_ID}/model'
 model = mlflow.pyfunc.load_model(logged_model)
 
 
