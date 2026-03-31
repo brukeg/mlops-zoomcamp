@@ -206,14 +206,34 @@ pipenv run python test.py
 # Expected: prediction + run_id in response
 ```
 
-### Lesson 3: batch (NEXT)
-- Fundamentally different pattern — no Flask, no always-on server
-- Script runs on schedule, reads input data, scores in bulk, writes predictions to S3
-- Covers: `score.ipynb` → `score.py` → `score_backfill.py` + `score_deploy.py`
-- Same adaptation pattern: substitute your S3 bucket and MLflow run ID
-- Use Docker for consistency even though the lesson doesn't require it
-- Watch for dependency version mismatches (same issue as web-service-mlflow)
+### Lesson 3: batch ✅ COMPLETE
+- Batch scoring pattern — no Flask, no always-on server
+- Script reads input parquet from S3, scores with MLflow model, writes predictions back to S3
+- Stripped Prefect from course version — replaced with plain Python + argparse
+- score_backfill.py and score_deploy.py skipped — Prefect-only scaffolding, not applicable
 - Files in `04-deployment/batch/`
+
+#### Key design decisions
+- `MLFLOW_TRACKING_URI` set via `os.getenv()` with private IP fallback (`172.31.24.14:5000`)
+- `RUN_ID` passed as `--run-id` argparse argument at runtime — not hardcoded
+- Input data: `s3://mlflow-artifacts-remote-bruke-720881264075-us-west-2-an/data/green/`
+- Output predictions: `s3://mlflow-artifacts-remote-bruke-720881264075-us-west-2-an/taxi_type={type}/year={year}/month={month}/{run_id}.parquet`
+- Input file `green_tripdata_2021-02.parquet` uploaded manually to S3 via console
+- IAM role on EC2 handles all S3 auth — no credentials in container
+
+#### Running on EC2 (Docker)
+```bash
+cd /home/ec2-user/mlops-zoomcamp/04-deployment/batch
+docker build -t ride-duration-batch:v1 .
+docker run --rm \
+  -e MLFLOW_TRACKING_URI=http://172.31.24.14:5000 \
+  ride-duration-batch:v1 \
+  --taxi-type green --year 2021 --month 3 \
+  --run-id 44ce31d3a5234ae68e95c79221cbfadc
+```
+
+### Lesson 4: streaming (NEXT)
+- Not yet started
 
 ### Deferred cleanup
 - Delete stray `04-deployment/Pipfile` (Alexey's catch-all, not needed)
@@ -229,20 +249,7 @@ pipenv run python test.py
 ```
 4. If Mage container is stopped (not just restarted), recreate it with updated
    `MLFLOW_EC2_HOST` using the docker run command above
-5. Start the ride-duration-mlflow container:
-```bash
-   docker start ride-duration-mlflow
-   # or rebuild if image is missing (see web-service-mlflow section above)
-```
-6. To test the web service from Mac, update test.py URL to current EC2 public DNS:
-```bash
-   # in 04-deployment/web-service-mlflow/test.py, change:
-   url = 'http://<current-ec2-public-dns>:9696/predict'
-   # then run:
-   pipenv run python test.py
-   # expected: prediction + run_id in response
-```
-7. If first session after password rotation, update Secrets Manager
+5. If first session after password rotation, update Secrets Manager
 
 ## Shutdown Checklist (Each Session)
 1. `exit` SSH session
