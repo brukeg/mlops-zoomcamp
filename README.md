@@ -114,5 +114,28 @@ To produce a compatible model artifact, run `random-forest.ipynb` with MLflow tr
 URI pointed at your MLflow server. The notebook trains a `DictVectorizer + RandomForestRegressor` 
 sklearn Pipeline and logs it as a single artifact.
 
-**In progress:** Batch deployment lesson.
+#### Lesson: `batch/`
+
+A scheduled batch scoring script that reads input data from S3, scores it in bulk using
+a model loaded from MLflow, and writes predictions back to S3 as a parquet file.
+Containerized with Docker for consistent execution.
+
+- No always-on server — runs on demand or on a schedule and exits
+- Model loaded via MLflow `runs:/` URI (same as web-service-mlflow)
+- `MLFLOW_TRACKING_URI` and `RUN_ID` passed as environment variables / CLI args
+- Prefect removed from the course version — plain Python with argparse used instead
+- Output partitioned by taxi type, year, and month (Hive convention)
+
+```bash
+# Build and run on EC2
+cd 04-deployment/batch
+docker build -t ride-duration-batch:v1 .
+docker run --rm \
+  -e MLFLOW_TRACKING_URI=http://<ec2-private-ip>:5000 \
+  ride-duration-batch:v1 \
+  --taxi-type green --year 2021 --month 3 \
+  --run-id <mlflow-run-id>
+```
+
+**Up next:** Streaming deployment lesson.
 
