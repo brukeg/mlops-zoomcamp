@@ -1,4 +1,5 @@
 # MLOps Zoomcamp — Module 4: Model Deployment
+Golden Rule: Do not edit files or add new files without consent
 
 ## Project Overview
 We are working through the MLOps Zoomcamp course. Module 3 (Mage orchestration) is complete.
@@ -162,42 +163,61 @@ sudo cp 03-orchestration/mlops-pipeline/blocks/train_model.py /home/ec2-user/mlo
 5. **Subsampling in place** — df_train and df_val are sampled to 10,000 rows in ingest_data.py;
    revert if training quality becomes important (e.g. capstone)
 
-## Module 4: Web Service Deployment
+## Module 4: Deployment Lessons
 
-### Overview
+### Lesson 1: web-service ✅ COMPLETE
 - Flask app (`predict.py`) serves ride duration predictions on port 9696
 - Model loaded from `lin_reg.bin` (pickled DictVectorizer + LinearRegression)
 - Containerized with Docker, deployed on EC2
 - Port 9696 open in EC2 security group (0.0.0.0/0)
+- Key files in `04-deployment/web-service/`
+- numpy pinned to 1.21.6 — newer versions break binary compatibility with lin_reg.bin
 
-### Files
-- `04-deployment/web-service/predict.py` — Flask app
-- `04-deployment/web-service/test.py` — test client (points at localhost by default)
-- `04-deployment/web-service/Dockerfile` — builds the service image
-- `04-deployment/web-service/Pipfile` — pinned deps: scikit-learn==1.0.2, numpy==1.21.6, flask, gunicorn
-- `04-deployment/web-service/lin_reg.bin` — pre-trained model (committed to git)
+### Lesson 2: web-service-mlflow ✅ COMPLETE
+- Flask app loads a RandomForest pipeline from S3 via MLflow at container startup
+- No pickle file — model resolved via `runs:/{RUN_ID}/model` URI (more portable than hardcoded S3 path)
+- `MLFLOW_TRACKING_URI` passed as env var using EC2 private IP `172.31.24.14:5000` (stable across stop/start)
+- `RUN_ID` passed as env var at container startup — not hardcoded
+- scikit-learn bumped to `==1.6.1`, numpy to `==2.0.2` to match what EC2 trained the model with
+- Model artifact produced by running `random-forest.ipynb` on EC2 via Jupyter over SSH tunnel
+- IAM role handles S3 access — no credentials injected into container
 
-### Running on EC2
+#### Current run
+- **Experiment:** `web-service-mlflow`
+- **Run ID:** `44ce31d3a5234ae68e95c79221cbfadc`
+- **Container name:** `ride-duration-mlflow`
+- Needs `docker start ride-duration-mlflow` each session (not set to auto-restart)
+
+#### Running on EC2
 ```bash
-# SSH into EC2, then:
-cd /home/ec2-user/mlops-zoomcamp
-git pull
-cd 04-deployment/web-service
-docker build -t ride-duration-prediction-service:v1 .
-docker run -d --name ride-duration -p 9696:9696 ride-duration-prediction-service:v1
+cd /home/ec2-user/mlops-zoomcamp/04-deployment/web-service-mlflow
+docker build -t ride-duration-mlflow:v1 .
+docker run -d --name ride-duration-mlflow \
+  -p 9696:9696 \
+  -e RUN_ID=44ce31d3a5234ae68e95c79221cbfadc \
+  -e MLFLOW_TRACKING_URI=http://172.31.24.14:5000 \
+  ride-duration-mlflow:v1
 ```
 
-### Testing from Mac
+#### Testing from Mac
 ```bash
 # Update test.py url to EC2 public DNS, then:
 pipenv run python test.py
-# Expected: {'duration': 26.43883355119793}
+# Expected: prediction + run_id in response
 ```
 
-### Notes
-- numpy must be pinned to 1.21.6 — newer versions cause binary incompatibility with lin_reg.bin
-- test.py defaults to localhost; update URL manually when testing against EC2
-- Next lesson: web-service-mlflow (loads model from MLflow registry instead of pickle)
+### Lesson 3: batch (NEXT)
+- Fundamentally different pattern — no Flask, no always-on server
+- Script runs on schedule, reads input data, scores in bulk, writes predictions to S3
+- Covers: `score.ipynb` → `score.py` → `score_backfill.py` + `score_deploy.py`
+- Same adaptation pattern: substitute your S3 bucket and MLflow run ID
+- Use Docker for consistency even though the lesson doesn't require it
+- Watch for dependency version mismatches (same issue as web-service-mlflow)
+- Files in `04-deployment/batch/`
+
+### Deferred cleanup
+- Delete stray `04-deployment/Pipfile` (Alexey's catch-all, not needed)
+- Consider Elastic IP on EC2 to eliminate DNS-changes-on-restart problem
 
 ## Startup Checklist (Each Session)
 1. RDS is left running — no action needed (stopped only to save cost on long breaks)
@@ -205,25 +225,22 @@ pipenv run python test.py
 3. SSH in and verify services:
 ```bash
    sudo systemctl status mlflow   # should be active
-   docker ps                      # should show mage + ride-duration containers
+   docker ps                      # should show mage + ride-duration-mlflow containers
 ```
 4. If Mage container is stopped (not just restarted), recreate it with updated
    `MLFLOW_EC2_HOST` using the docker run command above
-5. If ride-duration container is not running, restart it:
+5. Start the ride-duration-mlflow container:
 ```bash
-   docker start ride-duration
-   # or rebuild if image is missing:
-   cd /home/ec2-user/mlops-zoomcamp/04-deployment/web-service
-   docker build -t ride-duration-prediction-service:v1 .
-   docker run -d --name ride-duration -p 9696:9696 ride-duration-prediction-service:v1
+   docker start ride-duration-mlflow
+   # or rebuild if image is missing (see web-service-mlflow section above)
 ```
 6. To test the web service from Mac, update test.py URL to current EC2 public DNS:
 ```bash
-   # in 04-deployment/web-service/test.py, change:
+   # in 04-deployment/web-service-mlflow/test.py, change:
    url = 'http://<current-ec2-public-dns>:9696/predict'
    # then run:
    pipenv run python test.py
-   # expected: {'duration': 26.43883355119793}
+   # expected: prediction + run_id in response
 ```
 7. If first session after password rotation, update Secrets Manager
 
