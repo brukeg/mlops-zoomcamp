@@ -1,5 +1,6 @@
 import os
 import pickle
+import requests
 import pandas as pd
 import mlflow
 import xgboost as xgb
@@ -12,7 +13,12 @@ MLFLOW_TRACKING_URI = f"http://{os.environ.get('MLFLOW_EC2_HOST', '172.31.24.14'
 
 def read_dataframe(year, month):
     url = f'https://d37ci6vzurychx.cloudfront.net/trip-data/green_tripdata_{year}-{month:02d}.parquet'
-    df = pd.read_parquet(url)
+    save_path = f'/tmp/green_tripdata_{year}-{month:02d}.parquet'
+    resp = requests.get(url, stream=True, timeout=60)
+    with open(save_path, 'wb') as f:
+        for chunk in resp.iter_content(chunk_size=8192):
+            f.write(chunk)
+    df = pd.read_parquet(save_path)
 
     df['duration'] = df.lpep_dropoff_datetime - df.lpep_pickup_datetime
     df.duration = df.duration.apply(lambda td: td.total_seconds() / 60)
