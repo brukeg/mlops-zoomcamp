@@ -24,14 +24,12 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 1,
   "links": [],
-  "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "postgres",
-        "uid": "PCC52D03280B7034C"
+        "uid": "cfiw294uqn2tcc"
       },
       "fieldConfig": {
         "defaults": {
@@ -39,9 +37,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -50,6 +52,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -57,6 +60,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -72,7 +76,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -94,24 +98,27 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
-            "uid": "PCC52D03280B7034C"
+            "uid": "cfiw294uqn2tcc"
           },
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": false,
-          "rawSql": "SELECT\n  \"timestamp\" AS \"time\",\n  prediction_drift\nFROM dummy_metrics\nWHERE\n  $__timeFilter(\"timestamp\")\nORDER BY 1",
+          "rawSql": "SELECT\n  \"timestamp\" AS \"time\",\n  prediction_drift\nFROM taxi_monitoring_metrics\nWHERE\n  $__timeFilter(\"timestamp\")\nORDER BY 1",
           "refId": "A",
           "select": [
             [
@@ -123,7 +130,7 @@
               }
             ]
           ],
-          "table": "dummy_metrics",
+          "table": "taxi_monitoring_metrics",
           "timeColumn": "\"timestamp\"",
           "timeColumnType": "timestamp",
           "where": [
@@ -141,7 +148,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "PCC52D03280B7034C"
+        "uid": "cfiw294uqn2tcc"
       },
       "fieldConfig": {
         "defaults": {
@@ -149,9 +156,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -160,6 +171,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -167,6 +179,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -182,7 +195,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -220,24 +233,27 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
-            "uid": "PCC52D03280B7034C"
+            "uid": "cfiw294uqn2tcc"
           },
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": false,
-          "rawSql": "SELECT\n  \"timestamp\" AS \"time\",\n  share_missing_values\nFROM dummy_metrics\nWHERE\n  $__timeFilter(\"timestamp\")\nORDER BY 1",
+          "rawSql": "SELECT\n  \"timestamp\" AS \"time\",\n  share_missing_values\nFROM taxi_monitoring_metrics\nWHERE\n  $__timeFilter(\"timestamp\")\nORDER BY 1",
           "refId": "A",
           "select": [
             [
@@ -249,7 +265,7 @@
               }
             ]
           ],
-          "table": "dummy_metrics",
+          "table": "taxi_monitoring_metrics",
           "timeColumn": "\"timestamp\"",
           "timeColumnType": "timestamp",
           "where": [
@@ -267,7 +283,7 @@
     {
       "datasource": {
         "type": "postgres",
-        "uid": "PCC52D03280B7034C"
+        "uid": "cfiw294uqn2tcc"
       },
       "fieldConfig": {
         "defaults": {
@@ -275,9 +291,13 @@
             "mode": "palette-classic"
           },
           "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
             "barAlignment": 0,
+            "barWidthFactor": 0.6,
             "drawStyle": "line",
             "fillOpacity": 0,
             "gradientMode": "none",
@@ -286,6 +306,7 @@
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
             "lineInterpolation": "linear",
             "lineWidth": 1,
             "pointSize": 5,
@@ -293,6 +314,7 @@
               "type": "linear"
             },
             "showPoints": "auto",
+            "showValues": false,
             "spanNulls": false,
             "stacking": {
               "group": "A",
@@ -308,7 +330,7 @@
             "steps": [
               {
                 "color": "green",
-                "value": null
+                "value": 0
               },
               {
                 "color": "red",
@@ -346,24 +368,27 @@
         "legend": {
           "calcs": [],
           "displayMode": "list",
-          "placement": "bottom"
+          "placement": "bottom",
+          "showLegend": true
         },
         "tooltip": {
+          "hideZeros": false,
           "mode": "single",
           "sort": "none"
         }
       },
+      "pluginVersion": "12.4.2",
       "targets": [
         {
           "datasource": {
             "type": "postgres",
-            "uid": "PCC52D03280B7034C"
+            "uid": "cfiw294uqn2tcc"
           },
           "format": "time_series",
           "group": [],
           "metricColumn": "none",
           "rawQuery": false,
-          "rawSql": "SELECT\n  \"timestamp\" AS \"time\",\n  num_drifted_columns\nFROM dummy_metrics\nWHERE\n  $__timeFilter(\"timestamp\")\nORDER BY 1",
+          "rawSql": "SELECT\n  \"timestamp\" AS \"time\",\n  num_drifted_columns\nFROM taxi_monitoring_metrics\nWHERE\n  $__timeFilter(\"timestamp\")\nORDER BY 1",
           "refId": "A",
           "select": [
             [
@@ -375,7 +400,7 @@
               }
             ]
           ],
-          "table": "dummy_metrics",
+          "table": "taxi_monitoring_metrics",
           "timeColumn": "\"timestamp\"",
           "timeColumnType": "timestamp",
           "where": [
@@ -391,20 +416,21 @@
       "type": "timeseries"
     }
   ],
-  "schemaVersion": 36,
-  "style": "dark",
+  "preload": false,
+  "refresh": "",
+  "schemaVersion": 42,
   "tags": [],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "2022-01-22T05:42:46.872Z",
-    "to": "2022-02-18T03:36:41.895Z"
+    "from": "2022-02-01T08:00:00.000Z",
+    "to": "2022-03-01T07:59:59.000Z"
   },
   "timepicker": {},
-  "timezone": "",
-  "title": "New dashboard",
-  "uid": "NPXSRpQ4z",
-  "version": 1,
+  "timezone": "browser",
+  "title": "data_drift",
+  "uid": "cfiw294uqn2tcc",
+  "version": 2,
   "weekStart": ""
 }
