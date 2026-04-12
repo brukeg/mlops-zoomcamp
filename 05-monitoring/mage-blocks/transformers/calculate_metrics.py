@@ -37,7 +37,8 @@ REPORT = Report(metrics=[
 def calculate_metrics(data, *args, **kwargs):
     reference_df, batches = data
 
-    reference_dataset = Dataset.from_pandas(reference_df, data_definition=DATA_DEFINITION)
+    cols = ['PU_DO', 'trip_distance', 'prediction']
+    reference_dataset = Dataset.from_pandas(reference_df[cols], data_definition=DATA_DEFINITION)
 
     conn = psycopg2.connect(
         host=RDS_HOST,
@@ -53,10 +54,11 @@ def calculate_metrics(data, *args, **kwargs):
         cur.execute(CREATE_TABLE)
 
     for batch in batches:
-        i = batch['day_index'].iloc[0]
+        i = int(batch['day_index'].iloc[0])
         timestamp = BEGIN + datetime.timedelta(i)
 
-        current_dataset = Dataset.from_pandas(batch, data_definition=DATA_DEFINITION)
+        cols = ['PU_DO', 'trip_distance', 'prediction']
+        current_dataset = Dataset.from_pandas(batch[cols], data_definition=DATA_DEFINITION)
         snapshot = REPORT.run(reference_data=reference_dataset, current_data=current_dataset)
         result = snapshot.dict()
 
