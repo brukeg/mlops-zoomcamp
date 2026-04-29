@@ -1,23 +1,17 @@
 LOCAL_TAG:=$(shell date +"%Y-%m-%d-%H-%M")
-LOCAL_IMAGE_NAME:=stream-model-duration:${LOCAL_TAG}
+LOCAL_IMAGE_NAME:=ride-duration:${LOCAL_TAG}
 
 test:
-	pytest tests/
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run pytest tests/
 
 quality_checks:
-	isort .
-	black .
-	pylint --recursive=y .
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run isort .
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run black .
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run pylint --recursive=y .
 
 build: quality_checks test
-	docker build -t ${LOCAL_IMAGE_NAME} .
-
-integration_test: build
-	LOCAL_IMAGE_NAME=${LOCAL_IMAGE_NAME} bash integraton-test/run.sh
-
-publish: build integration_test
-	LOCAL_IMAGE_NAME=${LOCAL_IMAGE_NAME} bash scripts/publish.sh
+	docker build -t ${LOCAL_IMAGE_NAME} 06-best-practices/code/
 
 setup:
-	pipenv install --dev
-	pre-commit install
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv install --dev
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run pre-commit install
