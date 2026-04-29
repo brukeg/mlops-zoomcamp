@@ -1,5 +1,7 @@
 import os
-from flask import Flask, request, jsonify
+
+from flask import Flask, jsonify, request
+
 import model
 
 RUN_ID = os.getenv('RUN_ID', '44ce31d3a5234ae68e95c79221cbfadc')
@@ -13,10 +15,7 @@ app = Flask('duration-prediction')
 def predict_endpoint():
     ride = request.get_json()
     prediction = model_service.predict_ride(ride)
-    result = {
-        'duration': prediction,
-        'model_version': RUN_ID
-    }
+    result = {'duration': prediction, 'model_version': RUN_ID}
     return jsonify(result)
 
 

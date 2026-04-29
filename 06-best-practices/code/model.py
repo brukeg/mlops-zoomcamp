@@ -13,7 +13,8 @@ def get_model_location(run_id):
 
 
 def load_model(run_id):
-    import mlflow
+    import mlflow  # pylint: disable=import-outside-toplevel
+
     model_path = get_model_location(run_id)
     return mlflow.pyfunc.load_model(model_path)
 
@@ -25,7 +26,7 @@ class ModelService:
 
     def prepare_features(self, ride):
         features = {}
-        features['PU_DO'] = '%s_%s' % (ride['PULocationID'], ride['DOLocationID'])
+        features['PU_DO'] = f"{ride['PULocationID']}_{ride['DOLocationID']}"
         features['trip_distance'] = ride['trip_distance']
         return features
 
