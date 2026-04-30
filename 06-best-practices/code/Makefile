@@ -4,6 +4,9 @@ LOCAL_IMAGE_NAME:=ride-duration:${LOCAL_TAG}
 test:
 	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run pytest tests/
 
+integration_test:
+	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run pytest tests/integration/
+
 quality_checks:
 	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run isort .
 	cd /Users/brukegetachew/git_repos/mlops-zoomcamp/06-best-practices/code && pipenv run black .

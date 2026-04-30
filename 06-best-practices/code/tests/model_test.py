@@ -3,16 +3,9 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
+from conftest import ModelMock  # pylint: disable=wrong-import-position
+
 import model  # pylint: disable=wrong-import-position
-
-
-class ModelMock:
-    def __init__(self, value):
-        self.value = value
-
-    def predict(self, X):
-        n = len(X)
-        return [self.value] * n
 
 
 def test_prepare_features():

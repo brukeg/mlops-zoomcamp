@@ -20,6 +20,7 @@ length_sort = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+norecursedirs = ["integration"]
 
 [tool.pylint.main]
 ignore-paths = [

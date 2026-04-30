@@ -29,7 +29,8 @@ repos:
         "-rn",
         "-sn",
         "--recursive=y",
-        "--rcfile=06-best-practices/code/pyproject.toml"
+        "--rcfile=06-best-practices/code/pyproject.toml",
+        "--ignore-paths=06-best-practices/code/tests"
       ]
 - repo: local
   hooks:
