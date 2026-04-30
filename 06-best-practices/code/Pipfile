@@ -15,6 +15,7 @@ pylint = "*"
 black = "*"
 isort = "*"
 pre-commit = "*"
+requests = "*"
 
 [requires]
 python_version = "3.9"
