@@ -1,0 +1,81 @@
+name: CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  cd:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install pipenv
+        run: pip install pipenv
+
+      - name: Install dependencies
+        run: make -f 06-best-practices/code/Makefile setup
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Check EC2 state
+        id: ec2-state
+        run: |
+          STATE=$(aws ec2 describe-instances \
+            --instance-ids ${{ secrets.EC2_INSTANCE_ID }} \
+            --query 'Reservations[0].Instances[0].State.Name' \
+            --output text)
+          echo "state=$STATE" >> $GITHUB_OUTPUT
+
+      - name: Start EC2 if not running
+        if: steps.ec2-state.outputs.state != 'running'
+        run: |
+          aws ec2 start-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          aws ec2 wait instance-running --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+          aws ec2 wait instance-status-ok --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
+
+      - name: Start prediction container via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: docker start ride-duration-mlflow
+
+      - name: Wait for prediction service to be healthy
+        run: |
+          for i in $(seq 1 12); do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+              http://${{ secrets.EC2_HOST }}:9696/predict \
+              -H "Content-Type: application/json" \
+              -d '{"PULocationID": 130, "DOLocationID": 205, "trip_distance": 3.66}')
+            if [ "$STATUS" = "200" ]; then
+              echo "Service is healthy"
+              exit 0
+            fi
+            echo "Attempt $i: got $STATUS, waiting 10s..."
+            sleep 10
+          done
+          echo "Service did not become healthy in time"
+          exit 1
+
+      - name: Run integration tests
+        run: make -f 06-best-practices/code/Makefile integration_test
+
+      - name: Stop EC2 if we started it
+        if: always() && steps.ec2-state.outputs.state != 'running'
+        run: |
+          aws ec2 stop-instances --instance-ids ${{ secrets.EC2_INSTANCE_ID }}
